@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="今週の献立">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#faf6f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -20,88 +20,109 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preven
 <title>今週の献立</title>
 <style>
 :root{
-  --bg:#faf6f1; --card:#ffffff; --ink:#2b2420; --sub:#7a6e66; --line:#eadfd5;
-  --accent:#c2410c; --accent-ink:#ffffff; --soft:#fdebdd; --ok:#2f9e44;
+  --bg:#f2f2f7; --cell:#ffffff; --sheet:#f2f2f7; --ink:#000000; --sub:#636366; --sep:rgba(60,60,67,.29);
+  --tint:#c2410c; --on-tint:#ffffff; --press:rgba(60,60,67,.12); --ok:#248a3d; --bar:#f9f9f9;
+  --fill:rgba(120,120,128,.2); --toast:#2c2c2e; --on-toast:#ffffff; --toast-act:#ffb340;
 }
 @media (prefers-color-scheme:dark){
-  :root{ --bg:#171412; --card:#231e1b; --ink:#f3ece6; --sub:#a89b91; --line:#3a322d;
-    --accent:#ff8a4c; --accent-ink:#1b120c; --soft:#3a2518; --ok:#69db7c; }
+  :root{ --bg:#000000; --cell:#1c1c1e; --sheet:#1c1c1e; --ink:#ffffff; --sub:#98989f; --sep:rgba(84,84,88,.65);
+    --tint:#ff9f0a; --on-tint:#000000; --press:rgba(235,235,245,.16); --ok:#30d158; --bar:#161616;
+    --fill:rgba(120,120,128,.36); --toast:#3a3a3c; }
+  #sheet{--cell:#2c2c2e}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
+html{font-size:17px;font:-apple-system-body}
 html,body{height:100%;overflow:hidden;margin:0}
 body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif;
-  font-size:16px;line-height:1.5;-webkit-user-select:none;user-select:none}
-.top{padding:10px 16px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
-.top h1{margin:0;font-size:20px;font-weight:700}
-.top p{margin:2px 0 0;font-size:13px;color:var(--sub)}
-main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 28px}
-.tabs{display:flex;background:var(--card);border-top:1px solid var(--line)}
-.tabs button{flex:1;border:0;background:none;color:var(--sub);font:inherit;font-size:12px;
-  padding:8px 0 6px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:2px}
-.tabs button span{font-size:20px;line-height:1}
-.tabs button.on{color:var(--accent);font-weight:700}
-button{font:inherit;color:inherit;touch-action:manipulation}
+  font-size:1rem;line-height:1.3;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;touch-action:manipulation;border:0;background:none;margin:0;text-align:inherit}
 input,select,textarea{font-size:16px}
-.btn{display:block;width:100%;min-height:50px;border:0;border-radius:14px;background:var(--accent);
-  color:var(--accent-ink);font-size:17px;font-weight:700;transition:transform .12s ease-out}
-.btn:active,.card:active,.item:active{transform:scale(.98)}
-.btn.sub{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600;font-size:16px}
-.note{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;margin:0 0 12px}
-.empty{text-align:center;color:var(--sub);padding:36px 8px 20px;font-size:15px}
-.card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;padding:12px;margin-bottom:10px;transition:transform .12s ease-out}
-.card.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.day{width:46px;text-align:center;flex:none}
-.day b{display:block;font-size:20px;line-height:1.1}
-.day small{font-size:12px;color:var(--sub)}
-.card.today .day small{color:var(--accent);font-weight:700}
-.dish{flex:1;min-width:0}
-.dish b{display:block;font-size:17px;overflow-wrap:anywhere}
-.dish small{color:var(--sub);font-size:13px}
-.swap{flex:none;min-width:56px;min-height:44px;border:1px solid var(--line);border-radius:10px;
-  background:var(--bg);font-size:14px;color:var(--ink)}
-.swap:active{background:var(--soft)}
-h2{font-size:14px;color:var(--sub);margin:18px 2px 8px;font-weight:600}
-h2:first-child{margin-top:0}
-.item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
-  border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:8px;min-height:56px;transition:transform .12s ease-out}
-.box{width:26px;height:26px;border-radius:50%;border:2px solid var(--sub);flex:none;
-  display:grid;place-items:center;color:transparent;font-size:16px;font-weight:700}
-.item.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
-.item .nm{flex:1;min-width:0}
-.item .nm b{font-weight:600;overflow-wrap:anywhere}
-.item .nm small{display:block;color:var(--sub);font-size:12px;overflow-wrap:anywhere}
-.item.done .nm b{text-decoration:line-through;color:var(--sub)}
-.item .q{flex:none;font-weight:600;font-size:15px;text-align:right}
-.item.done .q{color:var(--sub)}
-.have{flex:none;min-width:44px;min-height:44px;padding:0 8px;border:1px solid var(--line);border-radius:9px;
-  background:var(--bg);font-size:12px;color:var(--sub)}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{min-height:44px;padding:0 12px;border-radius:20px;border:1px solid var(--line);
-  background:var(--card);font-size:14px;color:var(--ink)}
-.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
-.panel p{margin:0 0 10px;font-size:14px;color:var(--sub)}
-.panel .btn+.btn{margin-top:8px}
-#sheetWrap{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
-#sheet{width:100%;max-height:88%;background:var(--bg);border-radius:20px 20px 0 0;display:flex;flex-direction:column;
-  animation:up .28s cubic-bezier(.32,.72,0,1)}
+
+/* 上のバー：大きな題名 */
+.top{padding:0 20px 8px;background:var(--bg)}
+.top h1{margin:0;font-size:min(2rem,40px);font-weight:700;letter-spacing:.01em;line-height:1.2}
+.top p{margin:2px 0 0;font-size:.882rem;color:var(--sub);min-height:1.15em}
+main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 16px 28px}
+
+/* 下のタブ */
+.tabs{display:flex;background:var(--bar);border-top:.5px solid var(--sep)}
+.tabs button{flex:1;color:var(--sub);font-size:11px;font-weight:500;padding:7px 0 4px;min-height:50px;
+  display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs svg{width:26px;height:26px;fill:currentColor}
+.tabs button.on{color:var(--tint)}
+.tabs button:active{opacity:.6}
+
+/* まとまり（iOS の設定画面のような表） */
+.hd{margin:22px 16px 7px;font-size:.765rem;color:var(--sub)}
+.hd:first-child{margin-top:6px}
+.ft{margin:7px 16px 0;font-size:.765rem;color:var(--sub);line-height:1.4}
+.group{background:var(--cell);border-radius:12px;overflow:hidden}
+.group+.group{margin-top:16px}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:9px 16px;position:relative}
+.row+.row::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.row.tap:active{background:var(--press)}
+.row.note{font-size:.882rem;line-height:1.45}
+.row.tint{color:var(--tint)}
+
+/* ボタン */
+.btn{display:block;width:100%;min-height:50px;border-radius:14px;background:var(--tint);color:var(--on-tint);
+  font-size:1rem;font-weight:600;text-align:center;transition:opacity .15s}
+.btn:active{opacity:.7}
+.txt{flex:none;min-width:44px;min-height:44px;padding:0 4px;color:var(--tint);font-size:1rem;text-align:center;border-radius:8px}
+.txt:active{opacity:.4}
+.txt.wide{display:block;width:100%;margin-top:14px}
+.txt.sm{font-size:.882rem}
+.empty{text-align:center;color:var(--sub);padding:48px 12px 24px;font-size:.882rem;line-height:1.6}
+
+/* 献立の行 */
+.day{min-width:40px;text-align:center;flex:none}
+.day b{display:block;font-size:1.294rem;font-weight:600;line-height:1.15}
+.day small{font-size:.706rem;color:var(--sub);white-space:nowrap}
+.day.today b,.day.today small{color:var(--tint)}
+.day.today small{font-weight:600}
+.dish{flex:1;min-width:0;padding:3px 0}
+.dish b{display:block;font-weight:600;overflow-wrap:anywhere}
+.dish small{display:block;margin-top:2px;color:var(--sub);font-size:.882rem}
+
+/* 買い物の行 */
+.box{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--sub);flex:none;
+  display:grid;place-items:center;color:transparent;font-size:14px;font-weight:700}
+.done .box{background:var(--tint);border-color:var(--tint);color:var(--on-tint)}
+.nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.nm small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px;color:var(--sub);font-size:.765rem}
+.done .nm>span{color:var(--sub);text-decoration:line-through}
+.q{flex:none;color:var(--sub);text-align:right;font-size:.941rem}
+
+/* 切り替え */
+.sw{flex:none;width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 5px rgba(0,0,0,.25);transition:transform .2s}
+[aria-checked="true"] .sw{background:#34c759}
+[aria-checked="true"] .sw::after{transform:translateX(20px)}
+
+/* 作り方のシート */
+#sheetWrap{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.4);display:flex;align-items:flex-end}
+#sheet{width:100%;max-height:90%;background:var(--sheet);border-radius:14px 14px 0 0;display:flex;flex-direction:column;
+  animation:up .4s cubic-bezier(.32,.72,0,1)}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
-#sheetBody{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 18px;min-height:0}
-.shead{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
-.shead b{flex:1;font-size:20px;overflow-wrap:anywhere}
-.shead button{min-width:64px;min-height:44px;border:0;border-radius:10px;background:var(--card);font-size:15px}
-#sheetBody table{width:100%;border-collapse:collapse;font-size:15px}
-#sheetBody td{padding:7px 0;border-bottom:1px solid var(--line)}
-#sheetBody td:last-child{text-align:right;color:var(--sub);white-space:nowrap}
-#sheetBody ol{padding-left:22px;margin:0}
-#sheetBody li{margin-bottom:10px}
-#toast{position:fixed;left:16px;right:16px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:30;background:var(--ink);color:var(--bg);
-  border-radius:12px;padding:10px 12px 10px 14px;display:flex;align-items:center;gap:10px;font-size:14px}
+.shead{display:flex;align-items:center;padding:6px 12px 0;position:relative}
+.shead::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--fill)}
+.shead .txt{padding:0 8px;margin-top:8px}
+#sheetBody{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 24px;min-height:0}
+#sheetBody h3{margin:4px 4px 2px;font-size:min(1.647rem,34px);font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+#sheetBody .lead{margin:0 4px;color:var(--sub);font-size:.882rem}
+.step{align-items:flex-start;line-height:1.45}
+.step i{flex:none;width:24px;height:24px;border-radius:50%;background:var(--tint);color:var(--on-tint);
+  font-style:normal;font-size:.765rem;font-weight:700;display:grid;place-items:center;margin-top:1px}
+
+/* お知らせ */
+#toast{position:fixed;left:12px;right:12px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:30;background:var(--toast);
+  color:var(--on-toast);border-radius:14px;padding:6px 8px 6px 16px;display:flex;align-items:center;gap:10px;font-size:.882rem;
+  box-shadow:0 6px 20px rgba(0,0,0,.2)}
 #toast span{flex:1}
-#toast button{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px}
+#toast button{min-height:44px;padding:0 10px;color:var(--toast-act);font-weight:600;font-size:.882rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>
@@ -112,7 +133,7 @@ body{position:absolute;top:0;right:0;bottom:0;left:0;height:auto;padding-top:env
   html{position:static;height:100lvh;overflow:visible}
   body{position:static;height:100lvh;overflow:visible}
   #sheetWrap{bottom:auto;height:100lvh}
-  .top{padding-top:10px}
+  .top{padding-top:34px}
 }
 </style>
 
@@ -128,14 +149,14 @@ body{position:absolute;top:0;right:0;bottom:0;left:0;height:auto;padding-top:env
 <main id="main"></main>
 
 <nav class="tabs">
-  <button data-tab="plan" class="on"><span>🍚</span>献立</button>
-  <button data-tab="shop"><span>🛒</span>買い物</button>
-  <button data-tab="set"><span>⚙️</span>設定</button>
+  <button data-tab="plan" class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h1.5v6h1V2H10v6h1V2h1.5v7a2.5 2.5 0 0 1-2 2.45V22H8V11.45A2.5 2.5 0 0 1 6 9zM15 2c2 0 3.5 2.5 3.5 6.5V13h-1v9H15z"/></svg>献立</button>
+  <button data-tab="shop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h2.6l.7 3H21l-2 8.5H7.4L5 4.5H2zM8.5 17a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8.5 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>買い物</button>
+  <button data-tab="set"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>設定</button>
 </nav>
 
 <div id="sheetWrap" hidden>
   <div id="sheet">
-    <div class="shead"><b id="sheetTtl"></b><button id="sheetClose">閉じる</button></div>
+    <div class="shead"><button id="sheetClose" class="txt">閉じる</button></div>
     <div id="sheetBody"></div>
   </div>
 </div>
@@ -323,10 +344,11 @@ function render(){
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
   if(tab==="plan") renderPlan(); else if(tab==="shop") renderShop(); else renderSet();
 }
+const note=t=>'<div class="group" style="margin-bottom:16px"><div class="row note">'+t+'</div></div>';
 function backupNote(){
   const base=S.lastBackup||S.firstUse;
   if(!S.plan||Date.now()-base<30*864e5) return "";
-  return '<p class="note">バックアップから30日以上たっています。「設定」から保存しておくと安心です。</p>';
+  return note("バックアップから30日以上たっています。「設定」から保存しておくと安心です。");
 }
 function renderPlan(){
   $("ttl").textContent="今週の献立";
@@ -339,14 +361,15 @@ function renderPlan(){
   const a=dayOf(S.plan.start,0), b=dayOf(S.plan.start,6);
   $("sub").textContent=(a.getMonth()+1)+"/"+a.getDate()+" 〜 "+(b.getMonth()+1)+"/"+b.getDate()+"　夕食・1人分";
   let h=backupNote();
-  if(today>end) h+='<p class="note">この献立の1週間は終わりました。下のボタンで次の1週間を作れます。</p>';
+  if(today>end) h+=note("この献立の1週間は終わりました。下のボタンで次の1週間を作れます。");
+  h+='<div class="group">';
   S.plan.days.forEach((n,i)=>{
     const d=dayOf(S.plan.start,i), r=BY[n], isT=ymd(d)===today;
-    h+='<div class="card'+(isT?" today":"")+'" data-act="open" data-i="'+i+'"><div class="day"><b>'+d.getDate()+'</b><small>'+(isT?"今日":WD[d.getDay()]+"曜")+'</small></div>'
+    h+='<div class="row tap" data-act="open" data-i="'+i+'"><div class="day'+(isT?" today":"")+'"><b>'+d.getDate()+'</b><small>'+(isT?"今日":WD[d.getDay()]+"曜")+'</small></div>'
       +'<div class="dish"><b>'+esc(r.n)+'</b><small>'+esc(r.k)+'・約'+r.t+'分</small></div>'
-      +'<button class="swap" data-act="swap" data-i="'+i+'">替える</button></div>';
+      +'<button class="txt" data-act="swap" data-i="'+i+'">替える</button></div>';
   });
-  h+='<button class="btn sub" data-act="make" style="margin-top:8px">1週間分を作り直す</button>';
+  h+='</div><p class="ft">料理を押すと、材料と作り方が開きます。</p><button class="txt wide" data-act="make">1週間分を作り直す</button>';
   main.innerHTML=h;
 }
 function renderShop(){
@@ -359,40 +382,43 @@ function renderShop(){
   let h="";
   CATS.forEach(c=>{
     const xs=list.filter(x=>M[x.name][1]===c); if(!xs.length) return;
-    h+="<h2>"+esc(c)+"</h2>";
+    h+='<p class="hd">'+esc(c)+'</p><div class="group">';
     xs.forEach(x=>{
       const on=!!S.checks[x.name];
-      h+='<div class="item'+(on?" done":"")+'" data-act="check" data-n="'+esc(x.name)+'"><div class="box">✓</div>'
-        +'<div class="nm"><b>'+esc(x.name)+'</b><small>'+esc(x.dishes.join("、"))+'</small></div>'
+      h+='<div class="row tap'+(on?" done":"")+'" data-act="check" data-n="'+esc(x.name)+'"><div class="box">✓</div>'
+        +'<div class="nm"><span>'+esc(x.name)+'</span><small>'+esc(x.dishes.join("、"))+'</small></div>'
         +'<div class="q">'+esc(qty(x.name,x.q))+'</div>'
-        +'<button class="have" data-act="have" data-n="'+esc(x.name)+'">家に<br>ある</button></div>';
+        +'<button class="txt sm" data-act="have" data-n="'+esc(x.name)+'">家にある</button></div>';
     });
+    h+="</div>";
   });
   const hid=new Set(); S.plan.days.forEach(n=>BY[n].ing.forEach(a=>{ if(inPantry(a[0])) hid.add(a[0]); }));
-  if(hid.size) h+='<p class="note" style="margin-top:16px">家にある物として '+hid.size+' 品を外しています（'+esc([...hid].slice(0,6).join("、"))+(hid.size>6?" など":"")+'）。変えるときは「設定」から。</p>';
+  if(hid.size) h+='<p class="ft" style="margin-top:16px">家にある物として '+hid.size+' 品を外しています（'+esc([...hid].slice(0,6).join("、"))+(hid.size>6?" など":"")+'）。変えるときは「設定」から。</p>';
   main.innerHTML=h;
 }
 function renderSet(){
   $("ttl").textContent="設定"; $("sub").textContent="";
-  let h='<h2>家にある物（買い物リストに出しません）</h2><div class="panel"><p>押すと切り替わります。色の付いた物がリストから外れます。</p>';
+  let h='<p class="hd">バックアップ</p><div class="group"><button class="row tap tint" data-act="backup">バックアップを保存</button>'
+    +'<button class="row tap tint" data-act="restore">バックアップから戻す</button></div>'
+    +'<p class="ft">献立やチェックは、このiPhoneの中だけに保存されます。ホーム画面のアイコンを消すと一緒に消えます。'
+    +(S.lastBackup?"最後の保存："+new Date(S.lastBackup).toLocaleDateString("ja-JP"):"")+'</p>'
+    +'<p class="hd" style="margin-top:30px">家にある物</p><p class="ft" style="margin:0 16px 4px">オンにした物は、買い物リストに出しません。</p>';
   CATS.forEach(c=>{
-    h+='<p style="margin:12px 0 6px;font-weight:600">'+esc(c)+'</p><div class="chips">';
-    Object.keys(M).filter(n=>M[n][1]===c).forEach(n=>{ h+='<button class="chip'+(inPantry(n)?" on":"")+'" data-act="pantry" data-n="'+esc(n)+'">'+esc(n)+'</button>'; });
+    h+='<p class="hd">'+esc(c)+'</p><div class="group">';
+    Object.keys(M).filter(n=>M[n][1]===c).forEach(n=>{
+      h+='<button class="row tap" role="switch" aria-checked="'+inPantry(n)+'" data-act="pantry" data-n="'+esc(n)+'"><span class="nm">'+esc(n)+'</span><span class="sw"></span></button>';
+    });
     h+="</div>";
   });
-  h+='</div><h2>バックアップ</h2><div class="panel"><p>献立やチェックは、このiPhoneの中だけに保存されます。ホーム画面のアイコンを消すと一緒に消えます。'
-    +(S.lastBackup?"<br>最後の保存："+new Date(S.lastBackup).toLocaleDateString("ja-JP"):"")+'</p>'
-    +'<button class="btn sub" data-act="backup">バックアップを保存</button><button class="btn sub" data-act="restore">バックアップから戻す</button></div>';
   main.innerHTML=h;
 }
 
 /* ---------- 作り方のシート ---------- */
 function openSheet(i){
   const r=BY[S.plan.days[i]];
-  $("sheetTtl").textContent=r.n;
-  let h='<h2>材料（1人分・約'+r.t+'分）</h2><table>';
-  r.ing.forEach(([n,q])=>{ h+="<tr><td>"+esc(n)+"</td><td>"+esc(qty(n,q))+"</td></tr>"; });
-  h+="</table><h2>作り方</h2><ol>"+r.s.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol>";
+  let h='<h3>'+esc(r.n)+'</h3><p class="lead">1人分・約'+r.t+'分</p><p class="hd">材料</p><div class="group">';
+  r.ing.forEach(([n,q])=>{ h+='<div class="row"><span class="nm">'+esc(n)+'</span><span class="q">'+esc(qty(n,q))+'</span></div>'; });
+  h+='</div><p class="hd">作り方</p><div class="group">'+r.s.map((x,k)=>'<div class="row step"><i>'+(k+1)+'</i><span class="nm">'+esc(x)+'</span></div>').join("")+"</div>";
   $("sheetBody").innerHTML=h; $("sheetBody").scrollTop=0; $("sheetWrap").hidden=false;
 }
 function closeSheet(){ $("sheetWrap").hidden=true; }
@@ -422,7 +448,7 @@ main.onclick=e=>{
     S.pantry[n]=true; delete S.checks[n]; save(); render();
     toast("「"+n+"」を家にある物にしました", ()=>{ if(had) S.pantry[n]=old; else delete S.pantry[n]; if(chk) S.checks[n]=true; save(); render(); });
   }
-  else if(act==="pantry"){ S.pantry[n]=!inPantry(n); if(S.pantry[n]) delete S.checks[n]; save(); el.classList.toggle("on",S.pantry[n]); }
+  else if(act==="pantry"){ S.pantry[n]=!inPantry(n); if(S.pantry[n]) delete S.checks[n]; save(); el.setAttribute("aria-checked",S.pantry[n]); }
   else if(act==="backup"){ backup(); }
   else if(act==="restore"){ $("file").value=""; $("file").click(); }
 };
