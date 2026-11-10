@@ -25,11 +25,15 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preven
   --fill:rgba(120,120,128,.2); --toast:#2c2c2e; --on-toast:#ffffff; --toast-act:#ffb340;
 }
 @media (prefers-color-scheme:dark){
-  :root{ --bg:#000000; --cell:#1c1c1e; --sheet:#1c1c1e; --ink:#ffffff; --sub:#98989f; --sep:rgba(84,84,88,.65);
+  :root:not([data-theme="light"]){ --bg:#000000; --cell:#1c1c1e; --sheet:#1c1c1e; --ink:#ffffff; --sub:#98989f; --sep:rgba(84,84,88,.65);
     --tint:#ff9f0a; --on-tint:#000000; --press:rgba(235,235,245,.16); --ok:#30d158; --bar:#161616;
     --fill:rgba(120,120,128,.36); --toast:#3a3a3c; }
-  #sheet{--cell:#2c2c2e}
+  :root:not([data-theme="light"]) #sheet{--cell:#2c2c2e}
 }
+:root[data-theme="dark"]{ --bg:#000000; --cell:#1c1c1e; --sheet:#1c1c1e; --ink:#ffffff; --sub:#98989f; --sep:rgba(84,84,88,.65);
+    --tint:#ff9f0a; --on-tint:#000000; --press:rgba(235,235,245,.16); --ok:#30d158; --bar:#161616;
+    --fill:rgba(120,120,128,.36); --toast:#3a3a3c; }
+:root[data-theme="dark"] #sheet{--cell:#2c2c2e}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html{font-size:17px;font:-apple-system-body}
@@ -102,6 +106,8 @@ main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;paddin
 .seg button:active{opacity:.6}
 .hd.dayhd{font-size:.882rem;color:var(--ink);line-height:1.4}
 .hd.dayhd b{color:var(--tint);margin-right:6px}
+
+.ck{flex:none;color:var(--tint);font-weight:700;font-size:1.1rem}
 
 /* 切り替え */
 .sw{flex:none;width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;transition:background .2s}
@@ -406,7 +412,7 @@ const WD = ["日","月","火","水","木","金","土"];
 /* ---------- 保存 ---------- */
 const KEY="kondate-v1";
 let S = load();
-function fresh(){ return {v:1,plan:null,prev:[],checks:{},dchecks:{},shopView:"week",pantry:{},lastBackup:0,firstUse:Date.now()}; }
+function fresh(){ return {v:1,plan:null,prev:[],checks:{},dchecks:{},shopView:"week",theme:"auto",pantry:{},lastBackup:0,firstUse:Date.now()}; }
 function clean(d){
   const s=fresh();
   if(!d||typeof d!=="object") return s;
@@ -418,6 +424,7 @@ function clean(d){
   if(s.plan&&d.dchecks&&typeof d.dchecks==="object") for(const k in d.dchecks){
     const m=/^([0-6])\|(.+)$/.exec(k); if(m&&Object.hasOwn(M,m[2])&&d.dchecks[k]===true) s.dchecks[k]=true; }
   if(d.shopView==="day") s.shopView="day";
+  if(d.theme==="light"||d.theme==="dark") s.theme=d.theme;
   if(Number.isFinite(d.lastBackup)) s.lastBackup=d.lastBackup;
   if(Number.isFinite(d.firstUse)&&d.firstUse>0) s.firstUse=d.firstUse;
   return s;
@@ -425,6 +432,17 @@ function clean(d){
 function load(){ try{ const t=localStorage.getItem(KEY); return clean(t?JSON.parse(t):null); }catch(e){ return fresh(); } }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+
+/* ---------- 見た目（自動・ライト・ダーク） ---------- */
+function applyTheme(){
+  const t=S.theme, el=document.documentElement;
+  if(t==="light"||t==="dark") el.setAttribute("data-theme",t); else el.removeAttribute("data-theme");
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>{
+    const dark=t==="dark"||(t!=="light"&&/dark/.test(m.media||""));
+    m.setAttribute("content",dark?"#000000":"#f2f2f7");
+  });
+}
+applyTheme();
 
 /* ---------- 小さな道具 ---------- */
 const $=id=>document.getElementById(id);
@@ -571,7 +589,12 @@ function renderShopDay(seg){
 }
 function renderSet(){
   $("ttl").textContent="設定"; $("sub").textContent="";
-  let h='<p class="hd">バックアップ</p><div class="group"><button class="row tap tint" data-act="backup">バックアップを保存</button>'
+  let h='<p class="hd">見た目</p><div class="group">';
+  [["auto","自動（iPhoneの設定に合わせる）"],["light","ライト（白）"],["dark","ダーク（黒）"]].forEach(([v,t])=>{
+    h+='<button class="row tap" role="radio" aria-checked="'+(S.theme===v)+'" data-act="theme" data-v="'+v+'"><span class="nm">'+t+'</span>'+(S.theme===v?'<span class="ck">✓</span>':"")+'</button>';
+  });
+  h+='</div><p class="ft">「自動」は、iPhoneのライトモード・ダークモードに合わせて切り替わります。</p>';
+  h+='<p class="hd">バックアップ</p><div class="group"><button class="row tap tint" data-act="backup">バックアップを保存</button>'
     +'<button class="row tap tint" data-act="restore">バックアップから戻す</button></div>'
     +'<p class="ft">献立やチェックは、このiPhoneの中だけに保存されます。ホーム画面のアイコンを消すと一緒に消えます。'
     +(S.lastBackup?"最後の保存："+new Date(S.lastBackup).toLocaleDateString("ja-JP"):"")+'</p>'
@@ -624,6 +647,7 @@ main.onclick=e=>{
     toast("「"+n+"」を家にある物にしました", ()=>{ if(had) S.pantry[n]=old; else delete S.pantry[n]; if(chk) S.checks[n]=true; save(); render(); });
   }
   else if(act==="pantry"){ S.pantry[n]=!inPantry(n); if(S.pantry[n]) delete S.checks[n]; save(); el.setAttribute("aria-checked",S.pantry[n]); }
+  else if(act==="theme"){ const v=el.dataset.v; S.theme=(v==="light"||v==="dark")?v:"auto"; save(); applyTheme(); render(); }
   else if(act==="backup"){ backup(); }
   else if(act==="restore"){ $("file").value=""; $("file").click(); }
 };
@@ -646,7 +670,7 @@ $("file").onchange=async e=>{
     const d=JSON.parse(await f.text());
     if(!d||typeof d!=="object"||d.v!==1) throw 0;
     if(!confirm("今のデータを、バックアップの内容に置き換えます。よろしいですか？")) return;
-    S=clean(d); save(); tab="plan"; render(); toast("バックアップから戻しました");
+    S=clean(d); save(); applyTheme(); tab="plan"; render(); toast("バックアップから戻しました");
   }catch(err){ alert("このファイルは読み込めませんでした。このアプリで保存したバックアップを選んでください。"); }
 };
 render();
