@@ -95,6 +95,14 @@ main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;paddin
 .done .nm>span{color:var(--sub);text-decoration:line-through}
 .q{flex:none;color:var(--sub);text-align:right;font-size:.941rem}
 
+/* 1週間／日ごとの切り替え */
+.seg{display:flex;background:var(--fill);border-radius:10px;padding:2px;margin-bottom:6px}
+.seg button{flex:1;min-height:44px;border-radius:8px;font-size:.882rem;text-align:center;color:var(--ink)}
+.seg button.on{background:var(--cell);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.seg button:active{opacity:.6}
+.hd.dayhd{font-size:.882rem;color:var(--ink);line-height:1.4}
+.hd.dayhd b{color:var(--tint);margin-right:6px}
+
 /* 切り替え */
 .sw{flex:none;width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;transition:background .2s}
 .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;
@@ -398,7 +406,7 @@ const WD = ["日","月","火","水","木","金","土"];
 /* ---------- 保存 ---------- */
 const KEY="kondate-v1";
 let S = load();
-function fresh(){ return {v:1,plan:null,prev:[],checks:{},pantry:{},lastBackup:0,firstUse:Date.now()}; }
+function fresh(){ return {v:1,plan:null,prev:[],checks:{},dchecks:{},shopView:"week",pantry:{},lastBackup:0,firstUse:Date.now()}; }
 function clean(d){
   const s=fresh();
   if(!d||typeof d!=="object") return s;
@@ -407,6 +415,9 @@ function clean(d){
   if(Array.isArray(d.prev)) s.prev=d.prev.filter(n=>typeof n==="string"&&Object.hasOwn(BY,n));
   if(d.checks&&typeof d.checks==="object") for(const k in d.checks) if(Object.hasOwn(M,k)&&d.checks[k]===true) s.checks[k]=true;
   if(d.pantry&&typeof d.pantry==="object") for(const k in d.pantry) if(Object.hasOwn(M,k)&&typeof d.pantry[k]==="boolean") s.pantry[k]=d.pantry[k];
+  if(s.plan&&d.dchecks&&typeof d.dchecks==="object") for(const k in d.dchecks){
+    const m=/^([0-6])\|(.+)$/.exec(k); if(m&&Object.hasOwn(M,m[2])&&d.dchecks[k]===true) s.dchecks[k]=true; }
+  if(d.shopView==="day") s.shopView="day";
   if(Number.isFinite(d.lastBackup)) s.lastBackup=d.lastBackup;
   if(Number.isFinite(d.firstUse)&&d.firstUse>0) s.firstUse=d.firstUse;
   return s;
@@ -453,7 +464,7 @@ function makePlan(){
   for(let t=0;t<60;t++){ if(order.every((r,i)=>i===0||r.k!==order[i-1].k)) break; order=shuffle(pick); }
   if(S.plan) S.prev=S.plan.days.slice();
   S.plan={start:ymd(new Date()),days:order.map(r=>r.n)};
-  S.checks={};
+  S.checks={}; S.dchecks={};
   save();
 }
 function swapDay(i){
@@ -464,6 +475,7 @@ function swapDay(i){
   S.plan.days[i]=pool[Math.floor(Math.random()*pool.length)].n;
   const need=shopList().map(x=>x.name);
   for(const k in S.checks) if(!need.includes(k)) delete S.checks[k];
+  for(const k in S.dchecks) if(k.startsWith(i+"|")) delete S.dchecks[k];
   save();
 }
 function shopList(){
@@ -516,10 +528,13 @@ function renderShop(){
   $("ttl").textContent="買い物リスト";
   const list=shopList();
   if(!S.plan){ $("sub").textContent=""; main.innerHTML='<p class="empty">まだ献立がありません。<br>「献立」で1週間分を作ると、ここに買う物が並びます。</p>'; return; }
+  const seg='<div class="seg"><button data-act="seg" data-v="week"'+(S.shopView==="day"?"":' class="on"')+'>1週間まとめて</button>'
+    +'<button data-act="seg" data-v="day"'+(S.shopView==="day"?' class="on"':"")+'>日ごと</button></div>';
+  if(S.shopView==="day"){ renderShopDay(seg); return; }
   const left=list.filter(x=>!S.checks[x.name]).length;
   $("sub").textContent=list.length?(left?"残り "+left+" 品（全 "+list.length+" 品）":"全部買いました"):"";
-  if(!list.length){ main.innerHTML='<p class="empty">買う物はありません。<br>材料はすべて「家にある物」になっています。</p>'; return; }
-  let h="";
+  if(!list.length){ main.innerHTML=seg+'<p class="empty">買う物はありません。<br>材料はすべて「家にある物」になっています。</p>'; return; }
+  let h=seg;
   CATS.forEach(c=>{
     const xs=list.filter(x=>M[x.name][1]===c); if(!xs.length) return;
     h+='<p class="hd">'+esc(c)+'</p><div class="group">';
@@ -534,6 +549,24 @@ function renderShop(){
   });
   const hid=new Set(); S.plan.days.forEach(n=>BY[n].ing.forEach(a=>{ if(inPantry(a[0])) hid.add(a[0]); }));
   if(hid.size) h+='<p class="ft" style="margin-top:16px">家にある物として '+hid.size+' 品を外しています（'+esc([...hid].slice(0,6).join("、"))+(hid.size>6?" など":"")+'）。変えるときは「設定」から。</p>';
+  main.innerHTML=h;
+}
+function renderShopDay(seg){
+  const today=ymd(new Date()); let h=seg,total=0,left=0;
+  S.plan.days.forEach((n,i)=>{
+    const d=dayOf(S.plan.start,i), r=BY[n], xs=r.ing.filter(a=>!inPantry(a[0]));
+    h+='<p class="hd dayhd"><b>'+(d.getMonth()+1)+'/'+d.getDate()+'（'+WD[d.getDay()]+'）'+(ymd(d)===today?" 今日":"")+'</b>'+esc(r.n)+'</p><div class="group">';
+    if(!xs.length) h+='<div class="row note" style="color:var(--sub)">買う物はありません</div>';
+    xs.forEach(([name,q])=>{
+      const k=i+"|"+name, on=!!S.dchecks[k]; total++; if(!on) left++;
+      h+='<div class="row tap'+(on?" done":"")+'" data-act="dcheck" data-k="'+esc(k)+'"><div class="box">✓</div>'
+        +'<div class="nm"><span>'+esc(name)+'</span></div><div class="q">'+esc(qty(name,q))+'</div>'
+        +'<button class="txt sm" data-act="have" data-n="'+esc(name)+'">家にある</button></div>';
+    });
+    h+="</div>";
+  });
+  $("sub").textContent=total?(left?"残り "+left+" 品（全 "+total+" 品）":"全部買いました"):"";
+  h+='<p class="ft" style="margin-top:16px">日ごとのチェックは、「1週間まとめて」のチェックとは別に残ります。</p>';
   main.innerHTML=h;
 }
 function renderSet(){
@@ -578,11 +611,13 @@ main.onclick=e=>{
   const el=e.target.closest("[data-act]"); if(!el) return;
   const act=el.dataset.act, n=el.dataset.n, i=Number(el.dataset.i);
   if(act==="make"){
-    if(S.plan&&Object.keys(S.checks).length&&!confirm("献立を作り直すと、買い物リストのチェックも消えます。作り直しますか？")) return;
+    if(S.plan&&(Object.keys(S.checks).length||Object.keys(S.dchecks).length)&&!confirm("献立を作り直すと、買い物リストのチェックも消えます。作り直しますか？")) return;
     makePlan(); main.scrollTop=0; render();
   }else if(act==="swap"){ swapDay(i); render(); }
   else if(act==="open"){ openSheet(i); }
   else if(act==="check"){ if(S.checks[n]) delete S.checks[n]; else S.checks[n]=true; save(); render(); }
+  else if(act==="dcheck"){ const k=el.dataset.k; if(S.dchecks[k]) delete S.dchecks[k]; else S.dchecks[k]=true; save(); render(); }
+  else if(act==="seg"){ S.shopView=el.dataset.v==="day"?"day":"week"; save(); main.scrollTop=0; render(); }
   else if(act==="have"){
     const had=(n in S.pantry), old=S.pantry[n], chk=!!S.checks[n];
     S.pantry[n]=true; delete S.checks[n]; save(); render();
