@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="今週の献立">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#faf6f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}*{touch-action:pan-x pan-y}</style>
+<script>
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+</script>
+<title>今週の献立</title>
+<style>
+:root{
+  --bg:#faf6f1; --card:#ffffff; --ink:#2b2420; --sub:#7a6e66; --line:#eadfd5;
+  --accent:#c2410c; --accent-ink:#ffffff; --soft:#fdebdd; --ok:#2f9e44;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#171412; --card:#231e1b; --ink:#f3ece6; --sub:#a89b91; --line:#3a322d;
+    --accent:#ff8a4c; --accent-ink:#1b120c; --soft:#3a2518; --ok:#69db7c; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;overflow:hidden;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif;
+  font-size:16px;line-height:1.5;-webkit-user-select:none;user-select:none}
+.top{padding:10px 16px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.top h1{margin:0;font-size:20px;font-weight:700}
+.top p{margin:2px 0 0;font-size:13px;color:var(--sub)}
+main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 28px}
+.tabs{display:flex;background:var(--card);border-top:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:none;color:var(--sub);font:inherit;font-size:12px;
+  padding:8px 0 6px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button span{font-size:20px;line-height:1}
+.tabs button.on{color:var(--accent);font-weight:700}
+button{font:inherit;color:inherit;touch-action:manipulation}
+input,select,textarea{font-size:16px}
+.btn{display:block;width:100%;min-height:50px;border:0;border-radius:14px;background:var(--accent);
+  color:var(--accent-ink);font-size:17px;font-weight:700;transition:transform .12s ease-out}
+.btn:active,.card:active,.item:active{transform:scale(.98)}
+.btn.sub{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600;font-size:16px}
+.note{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;margin:0 0 12px}
+.empty{text-align:center;color:var(--sub);padding:36px 8px 20px;font-size:15px}
+.card{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:12px;margin-bottom:10px;transition:transform .12s ease-out}
+.card.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.day{width:46px;text-align:center;flex:none}
+.day b{display:block;font-size:20px;line-height:1.1}
+.day small{font-size:12px;color:var(--sub)}
+.card.today .day small{color:var(--accent);font-weight:700}
+.dish{flex:1;min-width:0}
+.dish b{display:block;font-size:17px;overflow-wrap:anywhere}
+.dish small{color:var(--sub);font-size:13px}
+.swap{flex:none;min-width:56px;min-height:44px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);font-size:14px;color:var(--ink)}
+.swap:active{background:var(--soft)}
+h2{font-size:14px;color:var(--sub);margin:18px 2px 8px;font-weight:600}
+h2:first-child{margin-top:0}
+.item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:8px;min-height:56px;transition:transform .12s ease-out}
+.box{width:26px;height:26px;border-radius:50%;border:2px solid var(--sub);flex:none;
+  display:grid;place-items:center;color:transparent;font-size:16px;font-weight:700}
+.item.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.item .nm{flex:1;min-width:0}
+.item .nm b{font-weight:600;overflow-wrap:anywhere}
+.item .nm small{display:block;color:var(--sub);font-size:12px;overflow-wrap:anywhere}
+.item.done .nm b{text-decoration:line-through;color:var(--sub)}
+.item .q{flex:none;font-weight:600;font-size:15px;text-align:right}
+.item.done .q{color:var(--sub)}
+.have{flex:none;min-width:44px;min-height:44px;padding:0 8px;border:1px solid var(--line);border-radius:9px;
+  background:var(--bg);font-size:12px;color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 12px;border-radius:20px;border:1px solid var(--line);
+  background:var(--card);font-size:14px;color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.panel p{margin:0 0 10px;font-size:14px;color:var(--sub)}
+.panel .btn+.btn{margin-top:8px}
+#sheetWrap{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
+#sheet{width:100%;max-height:88%;background:var(--bg);border-radius:20px 20px 0 0;display:flex;flex-direction:column;
+  animation:up .28s cubic-bezier(.32,.72,0,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+#sheetBody{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 18px 18px;min-height:0}
+.shead{display:flex;align-items:center;gap:10px;padding:16px 18px 8px}
+.shead b{flex:1;font-size:20px;overflow-wrap:anywhere}
+.shead button{min-width:64px;min-height:44px;border:0;border-radius:10px;background:var(--card);font-size:15px}
+#sheetBody table{width:100%;border-collapse:collapse;font-size:15px}
+#sheetBody td{padding:7px 0;border-bottom:1px solid var(--line)}
+#sheetBody td:last-child{text-align:right;color:var(--sub);white-space:nowrap}
+#sheetBody ol{padding-left:22px;margin:0}
+#sheetBody li{margin-bottom:10px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:30;background:var(--ink);color:var(--bg);
+  border-radius:12px;padding:10px 12px 10px 14px;display:flex;align-items:center;gap:10px;font-size:14px}
+#toast span{flex:1}
+#toast button{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>
+html{position:fixed;top:0;right:0;bottom:0;left:0;height:auto;padding:0;overflow:hidden}
+body{position:absolute;top:0;right:0;bottom:0;left:0;height:auto;padding-top:env(safe-area-inset-top,0px);overflow:hidden}
+.tabs{padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (display-mode: standalone) {
+  html{position:static;height:100lvh;overflow:visible}
+  body{position:static;height:100lvh;overflow:visible}
+  #sheetWrap{bottom:auto;height:100lvh}
+  .top{padding-top:10px}
+}
+</style>
+
+</head>
+<body>
+
+
+<header class="top">
+  <h1 id="ttl">今週の献立</h1>
+  <p id="sub"></p>
+</header>
+
+<main id="main"></main>
+
+<nav class="tabs">
+  <button data-tab="plan" class="on"><span>🍚</span>献立</button>
+  <button data-tab="shop"><span>🛒</span>買い物</button>
+  <button data-tab="set"><span>⚙️</span>設定</button>
+</nav>
+
+<div id="sheetWrap" hidden>
+  <div id="sheet">
+    <div class="shead"><b id="sheetTtl"></b><button id="sheetClose">閉じる</button></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+<div id="toast" hidden><span id="toastMsg"></span><button id="toastUndo">元に戻す</button></div>
+<input type="file" id="file" accept="application/json,.json" hidden>
+
+<script>
+"use strict";
+/* ---------- 材料の一覧：名前 → [単位, 売り場, ふだん家にあるか] ---------- */
+/* 単位 "tsp" は小さじで数える調味料（大さじ1＝小さじ3） */
+const M = {
+  "玉ねぎ":["個","野菜",0],"にんじん":["本","野菜",0],"じゃがいも":["個","野菜",0],"キャベツ":["個","野菜",0],
+  "ピーマン":["個","野菜",0],"長ねぎ":["本","野菜",0],"もやし":["袋","野菜",0],"ほうれん草":["束","野菜",0],
+  "小松菜":["束","野菜",0],"大根":["本","野菜",0],"ブロッコリー":["株","野菜",0],"しめじ":["パック","野菜",0],
+  "ニラ":["束","野菜",0],"レタス":["個","野菜",0],"小ねぎ":["本","野菜",0],
+  "鶏もも肉":["g","肉",0],"鶏むね肉":["g","肉",0],"豚こま肉":["g","肉",0],"豚バラ薄切り肉":["g","肉",0],
+  "合いびき肉":["g","肉",0],"豚ひき肉":["g","肉",0],"牛こま肉":["g","肉",0],"ベーコン":["枚","肉",0],"ウインナー":["本","肉",0],
+  "鮭の切り身":["切れ","魚",0],"さばの切り身":["切れ","魚",0],"ぶりの切り身":["切れ","魚",0],"むきえび":["g","魚",0],
+  "卵":["個","卵・乳製品・豆腐",0],"豆腐":["丁","卵・乳製品・豆腐",0],"牛乳":["ml","卵・乳製品・豆腐",0],"バター":["g","卵・乳製品・豆腐",1],
+  "うどん":["玉","麺・ごはん",0],"スパゲッティ":["g","麺・ごはん",0],"焼きそば麺（ソース付き）":["玉","麺・ごはん",0],"ごはん":["杯","麺・ごはん",1],
+  "さば缶":["缶","缶詰・その他",0],"トマト缶":["缶","缶詰・その他",0],"キムチ":["g","缶詰・その他",0],"カレールウ":["皿分","缶詰・その他",0],"パン粉":["tsp","缶詰・その他",1],
+  "しょうゆ":["tsp","調味料",1],"みりん":["tsp","調味料",1],"酒":["tsp","調味料",1],"砂糖":["tsp","調味料",1],"塩":["tsp","調味料",1],
+  "こしょう":["tsp","調味料",1],"サラダ油":["tsp","調味料",1],"ごま油":["tsp","調味料",1],"オリーブ油":["tsp","調味料",1],"味噌":["tsp","調味料",1],
+  "ケチャップ":["tsp","調味料",1],"ウスターソース":["tsp","調味料",1],"片栗粉":["tsp","調味料",1],"小麦粉":["tsp","調味料",1],
+  "鶏がらスープの素":["tsp","調味料",1],"顆粒だし":["tsp","調味料",1],"コンソメ":["tsp","調味料",1],"めんつゆ（3倍）":["tsp","調味料",1],
+  "オイスターソース":["tsp","調味料",1],"豆板醤":["tsp","調味料",1],"おろししょうが":["tsp","調味料",1],"おろしにんにく":["tsp","調味料",1]
+};
+const CATS = ["野菜","肉","魚","卵・乳製品・豆腐","麺・ごはん","缶詰・その他","調味料"];
+
+/* ---------- 料理（すべて1人分）。量が 0 の調味料は「少々」 ---------- */
+const R = [
+{n:"鶏の照り焼き",k:"肉",t:20,i:"鶏もも肉:150,キャベツ:0.125,しょうゆ:3,みりん:3,酒:3,砂糖:1,サラダ油:1",
+ s:["鶏もも肉は厚い所に包丁を入れて開く。キャベツは千切りにする。","フライパンに油を熱し、皮を下にして中火で5分、返して3分焼く。","余分な脂をふき、しょうゆ・みりん・酒・砂糖を入れて、とろみが出るまで煮からめる。","切り分けて、キャベツと盛る。"]},
+{n:"豚のしょうが焼き",k:"肉",t:15,i:"豚こま肉:120,玉ねぎ:0.25,キャベツ:0.125,おろししょうが:1,しょうゆ:3,みりん:3,酒:3,サラダ油:1",
+ s:["玉ねぎは薄切り、キャベツは千切りにする。しょうが・しょうゆ・みりん・酒を混ぜておく。","フライパンに油を熱し、玉ねぎと豚肉を中火で炒める。","肉の色が変わったら合わせた調味料を入れ、汁気が少なくなるまで炒める。キャベツと盛る。"]},
+{n:"肉じゃが",k:"肉",t:30,i:"牛こま肉:80,じゃがいも:1,玉ねぎ:0.5,にんじん:0.33,しょうゆ:4.5,みりん:3,砂糖:3,酒:3,顆粒だし:0.5,サラダ油:1",
+ s:["じゃがいもは4つに切り、玉ねぎはくし形、にんじんは乱切りにする。","鍋に油を熱し、牛肉を炒める。色が変わったら野菜を入れてさっと炒める。","水150mlと顆粒だし・砂糖・酒・みりんを入れ、ふたをして弱めの中火で10分煮る。","しょうゆを入れ、じゃがいもがやわらかくなるまで5〜8分煮る。"]},
+{n:"肉野菜炒め",k:"肉",t:15,i:"豚こま肉:80,キャベツ:0.125,もやし:0.5,にんじん:0.33,ピーマン:1,鶏がらスープの素:1,しょうゆ:1,塩:0,こしょう:0,ごま油:1",
+ s:["キャベツはざく切り、にんじんは短冊切り、ピーマンは細切りにする。","フライパンにごま油を熱し、豚肉を炒める。色が変わったらにんじん、キャベツ、ピーマン、もやしの順に入れて強火で炒める。","鶏がらスープの素・しょうゆ・塩・こしょうで味をととのえる。"]},
+{n:"ハンバーグ",k:"肉",t:30,i:"合いびき肉:150,玉ねぎ:0.25,ブロッコリー:0.25,パン粉:6,牛乳:15,塩:0,こしょう:0,ケチャップ:6,ウスターソース:3,サラダ油:1",
+ s:["玉ねぎはみじん切りにする。パン粉は牛乳にひたす。ブロッコリーは小房に分けてゆでる。","ひき肉に塩・こしょうを入れて粘りが出るまでこね、玉ねぎとパン粉を混ぜて小判形にまとめる。","フライパンに油を熱し、中火で3分焼いて返す。ふたをして弱火で7分蒸し焼きにする。","取り出したフライパンにケチャップとウスターソースを入れてひと煮立ちさせ、かける。"]},
+{n:"鶏のから揚げ",k:"肉",t:30,i:"鶏もも肉:200,レタス:0.125,しょうゆ:3,酒:3,おろししょうが:1,おろしにんにく:1,片栗粉:9,サラダ油:12",
+ s:["鶏もも肉をひと口大に切り、しょうゆ・酒・しょうが・にんにくをもみ込んで10分おく。","汁気を軽く切り、片栗粉をまぶす。","フライパンに油を熱し、中火で片面3〜4分ずつ、こんがりするまで揚げ焼きにする。レタスと盛る。"]},
+{n:"豚キムチ炒め",k:"肉",t:10,i:"豚バラ薄切り肉:100,キムチ:80,ニラ:0.33,ごま油:1,しょうゆ:1",
+ s:["豚肉とニラは4cmの長さに切る。","フライパンにごま油を熱し、豚肉を炒める。","色が変わったらキムチとニラを入れてさっと炒め、しょうゆで味をととのえる。"]},
+{n:"麻婆豆腐",k:"肉",t:20,i:"豚ひき肉:80,豆腐:0.5,長ねぎ:0.33,おろししょうが:1,おろしにんにく:1,豆板醤:1,味噌:1.5,しょうゆ:3,砂糖:1,鶏がらスープの素:1,片栗粉:3,ごま油:1",
+ s:["豆腐は2cm角に切り、長ねぎはみじん切りにする。片栗粉は水大さじ1で溶く。","フライパンにごま油・しょうが・にんにく・豆板醤を入れて弱火にかけ、香りが出たらひき肉を炒める。","水150mlと味噌・しょうゆ・砂糖・鶏がらスープの素を入れ、煮立ったら豆腐を入れて3分煮る。","長ねぎを入れ、水溶き片栗粉を回し入れてとろみをつける。"]},
+{n:"回鍋肉",k:"肉",t:15,i:"豚バラ薄切り肉:100,キャベツ:0.125,ピーマン:1,味噌:3,砂糖:2,しょうゆ:1,酒:3,豆板醤:0.5,おろしにんにく:0.5,ごま油:1",
+ s:["キャベツはざく切り、ピーマンは乱切り、豚肉は4cmに切る。味噌・砂糖・しょうゆ・酒を混ぜておく。","フライパンにごま油・にんにく・豆板醤を入れて熱し、豚肉を炒める。","キャベツとピーマンを入れて強火で炒め、合わせた調味料をからめる。"]},
+{n:"チキンのトマト煮",k:"肉",t:30,i:"鶏もも肉:150,玉ねぎ:0.5,しめじ:0.5,トマト缶:0.5,コンソメ:1,おろしにんにく:1,オリーブ油:3,塩:0,こしょう:0",
+ s:["鶏もも肉はひと口大に切って塩・こしょうをふる。玉ねぎは薄切り、しめじはほぐす。","鍋にオリーブ油とにんにくを熱し、鶏肉を皮から焼く。焼き色がついたら玉ねぎとしめじを炒める。","トマト缶・水50ml・コンソメを入れ、ふたをして弱めの中火で15分煮る。塩・こしょうで味をととのえる。"]},
+{n:"鶏むね肉とブロッコリーのオイスター炒め",k:"肉",t:15,i:"鶏むね肉:150,ブロッコリー:0.5,オイスターソース:3,しょうゆ:1,酒:3,片栗粉:3,ごま油:1",
+ s:["鶏むね肉はそぎ切りにして酒と片栗粉をもみ込む。ブロッコリーは小房に分ける。","フライパンにごま油を熱し、鶏肉を両面焼く。","ブロッコリーと水大さじ2を入れ、ふたをして2分蒸す。オイスターソースとしょうゆをからめる。"]},
+{n:"豚バラ大根",k:"肉",t:30,i:"豚バラ薄切り肉:100,大根:0.167,しょうゆ:4.5,みりん:3,砂糖:3,酒:3,顆粒だし:0.5",
+ s:["大根は1cm厚さのいちょう切り、豚肉は4cmに切る。","鍋で豚肉を炒め、脂が出たら大根を入れて炒める。","水200mlと顆粒だし・砂糖・酒・みりんを入れ、ふたをして10分煮る。","しょうゆを入れ、大根に色がつくまで10分ほど煮る。"]},
+{n:"親子丼",k:"ごはん物",t:15,i:"鶏もも肉:100,玉ねぎ:0.25,卵:2,めんつゆ（3倍）:6,ごはん:1",
+ s:["鶏もも肉は小さめのひと口大、玉ねぎは薄切りにする。卵は軽く溶く。","小さなフライパンにめんつゆと水80mlを煮立て、鶏肉と玉ねぎを入れて中火で5分煮る。","卵を回し入れ、ふたをして30秒、半熟で火を止める。ごはんにのせる。"]},
+{n:"牛丼",k:"ごはん物",t:15,i:"牛こま肉:120,玉ねぎ:0.5,しょうゆ:4.5,みりん:3,砂糖:3,酒:3,顆粒だし:0.5,ごはん:1",
+ s:["玉ねぎは1cm幅のくし形に切る。","鍋に水100mlと顆粒だし・しょうゆ・みりん・砂糖・酒を煮立て、玉ねぎを入れて5分煮る。","牛肉を入れてほぐし、アクを取りながら5分煮る。ごはんにのせる。"]},
+{n:"カレーライス",k:"ごはん物",t:35,i:"豚こま肉:80,玉ねぎ:0.5,にんじん:0.33,じゃがいも:1,カレールウ:1,サラダ油:1,ごはん:1",
+ s:["玉ねぎはくし形、にんじんとじゃがいもはひと口大に切る。","鍋に油を熱し、豚肉と野菜を炒める。","水200mlを入れ、煮立ったらアクを取り、ふたをして弱火で15分煮る。","火を止めてルウを溶かし、弱火で5分煮る。ごはんにかける。"]},
+{n:"チャーハン",k:"ごはん物",t:10,i:"卵:1,長ねぎ:0.33,ウインナー:2,ごはん:1,鶏がらスープの素:1,しょうゆ:1,塩:0,こしょう:0,ごま油:3",
+ s:["長ねぎはみじん切り、ウインナーは輪切りにする。卵は溶く。","フライパンにごま油を強火で熱し、卵を入れてすぐごはんを入れ、ほぐしながら炒める。","ウインナーと長ねぎを入れ、鶏がらスープの素・塩・こしょうで味をつける。鍋肌からしょうゆを回し入れる。"]},
+{n:"オムライス",k:"ごはん物",t:20,i:"鶏もも肉:80,玉ねぎ:0.25,卵:2,ごはん:1,ケチャップ:9,バター:10,塩:0,こしょう:0",
+ s:["鶏もも肉は1cm角、玉ねぎはみじん切りにする。","フライパンにバター半分を熱して鶏肉と玉ねぎを炒め、ごはんとケチャップ大さじ2を入れて炒める。塩・こしょうをして皿に盛る。","残りのバターを熱し、溶いた卵を流して半熟の薄焼きにする。ごはんにかぶせ、残りのケチャップをかける。"]},
+{n:"鮭のムニエル",k:"魚",t:15,i:"鮭の切り身:1,ほうれん草:0.5,小麦粉:3,バター:10,塩:0,こしょう:0,しょうゆ:1",
+ s:["鮭に塩・こしょうをふり、小麦粉を薄くまぶす。ほうれん草は4cmに切る。","フライパンにバターを溶かし、鮭を中火で片面3分ずつ焼いて取り出す。","同じフライパンでほうれん草をさっと炒め、しょうゆで味をつけて添える。"]},
+{n:"さばの味噌煮",k:"魚",t:20,i:"さばの切り身:1,長ねぎ:0.33,味噌:4.5,砂糖:3,酒:6,みりん:3,おろししょうが:1",
+ s:["さばは皮に切り目を入れ、熱湯をかけて臭みを取る。長ねぎは4cmに切る。","小さな鍋に水100mlと酒・砂糖・みりん・しょうがを煮立て、さばと長ねぎを入れる。","落としぶたをして中火で5分煮る。味噌を煮汁で溶いて入れ、とろみが出るまで5〜7分煮る。"]},
+{n:"ぶりの照り焼き",k:"魚",t:15,i:"ぶりの切り身:1,小松菜:0.5,しょうゆ:3,みりん:3,酒:3,砂糖:1,サラダ油:1",
+ s:["ぶりは水気をふく。小松菜は4cmに切る。","フライパンに油を熱し、ぶりを中火で片面2〜3分ずつ焼く。わきで小松菜を炒めて取り出す。","しょうゆ・みりん・酒・砂糖を入れ、ぶりに煮からめる。"]},
+{n:"鮭のちゃんちゃん焼き",k:"魚",t:20,i:"鮭の切り身:1,キャベツ:0.125,玉ねぎ:0.25,しめじ:0.5,味噌:3,みりん:3,酒:3,砂糖:1,バター:10",
+ s:["キャベツはざく切り、玉ねぎは薄切り、しめじはほぐす。味噌・みりん・酒・砂糖を混ぜる。","フライパンにバターを溶かし、鮭を両面さっと焼く。まわりに野菜を入れる。","合わせ味噌を回しかけ、ふたをして弱めの中火で8分蒸し焼きにする。"]},
+{n:"えびと卵の炒め物",k:"魚",t:15,i:"むきえび:100,卵:2,長ねぎ:0.33,鶏がらスープの素:1,酒:3,片栗粉:1,塩:0,ごま油:3",
+ s:["えびに酒と片栗粉をもみ込む。長ねぎは斜め薄切りにする。卵に鶏がらスープの素と塩を混ぜる。","フライパンにごま油の半分を熱し、卵を大きく混ぜて半熟で取り出す。","残りのごま油でえびと長ねぎを炒め、火が通ったら卵を戻してさっと混ぜる。"]},
+{n:"さば缶のトマトパスタ",k:"麺",t:20,i:"スパゲッティ:100,さば缶:1,トマト缶:0.5,おろしにんにく:1,オリーブ油:3,コンソメ:1,塩:0",
+ s:["スパゲッティを袋の時間どおりにゆでる。","フライパンにオリーブ油とにんにくを熱し、さば缶を汁ごと入れてほぐす。トマト缶とコンソメを入れて5分煮る。","ゆでたスパゲッティを入れてからめ、塩で味をととのえる。"]},
+{n:"豆腐ステーキ きのこバターしょうゆ",k:"卵・豆腐",t:15,i:"豆腐:1,しめじ:0.5,小ねぎ:1,片栗粉:3,しょうゆ:3,みりん:3,バター:10",
+ s:["豆腐はキッチンペーパーで包んで10分水切りし、厚みを半分に切って片栗粉をまぶす。","フライパンにバターを溶かし、豆腐を中火で片面3分ずつ焼いて皿に盛る。","しめじを炒め、しょうゆとみりんを入れてひと煮立ちさせる。豆腐にかけ、小口切りの小ねぎを散らす。"]},
+{n:"豚ニラ玉",k:"卵・豆腐",t:10,i:"卵:2,ニラ:0.5,豚こま肉:50,鶏がらスープの素:1,しょうゆ:1,ごま油:3",
+ s:["ニラは4cmに切る。卵に鶏がらスープの素を混ぜる。","フライパンにごま油を熱し、豚肉を炒める。色が変わったらニラをさっと炒める。","卵を流し入れ、大きく混ぜて半熟で火を止める。しょうゆをたらす。"]},
+{n:"肉豆腐",k:"卵・豆腐",t:20,i:"牛こま肉:80,豆腐:0.5,長ねぎ:0.5,しょうゆ:4.5,みりん:3,砂糖:3,酒:3,顆粒だし:0.5",
+ s:["豆腐は4つに切り、長ねぎは斜め切りにする。","鍋に水150mlと顆粒だし・しょうゆ・みりん・砂糖・酒を煮立て、牛肉を入れてほぐす。","アクを取り、豆腐と長ねぎを入れて弱めの中火で10分煮る。"]},
+{n:"焼きうどん",k:"麺",t:15,i:"うどん:1,豚こま肉:60,キャベツ:0.125,にんじん:0.33,しょうゆ:3,顆粒だし:0.5,サラダ油:1",
+ s:["キャベツはざく切り、にんじんは短冊切りにする。","フライパンに油を熱し、豚肉、にんじん、キャベツの順に炒める。","うどんと水大さじ2を入れてほぐし、しょうゆと顆粒だしで味をつける。"]},
+{n:"ナポリタン",k:"麺",t:20,i:"スパゲッティ:100,ウインナー:3,玉ねぎ:0.25,ピーマン:1,ケチャップ:12,バター:10,塩:0,こしょう:0",
+ s:["スパゲッティを袋の時間どおりにゆでる。玉ねぎは薄切り、ピーマンは細切り、ウインナーは斜め切りにする。","フライパンにバターを溶かし、玉ねぎ、ウインナー、ピーマンを炒める。","ケチャップを入れて1分炒め、スパゲッティを入れてからめる。塩・こしょうで味をととのえる。"]},
+{n:"焼きそば",k:"麺",t:15,i:"焼きそば麺（ソース付き）:1,豚バラ薄切り肉:60,キャベツ:0.125,もやし:0.5,サラダ油:1",
+ s:["キャベツはざく切り、豚肉は4cmに切る。","フライパンに油を熱し、豚肉、キャベツ、もやしの順に炒める。","麺と水大さじ2を入れてほぐし、付属のソースを入れて全体にからめる。"]},
+{n:"きのことベーコンの和風パスタ",k:"麺",t:20,i:"スパゲッティ:100,しめじ:0.5,ベーコン:2,しょうゆ:3,バター:10,おろしにんにく:0.5,オリーブ油:1",
+ s:["スパゲッティを袋の時間どおりにゆでる。ゆで汁を大さじ2取っておく。しめじはほぐし、ベーコンは1cm幅に切る。","フライパンにオリーブ油とにんにくを熱し、ベーコンとしめじを炒める。","スパゲッティ・ゆで汁・バター・しょうゆを入れて手早くからめる。"]}
+];
+R.forEach(r=>{ r.ing=r.i.split(",").map(x=>{const p=x.split(":");return [p[0],Number(p[1])];});
+  r.ing.forEach(a=>{ if(!M[a[0]]) console.error("材料の一覧にない:",r.n,a[0]); }); });
+const BY = Object.fromEntries(R.map(r=>[r.n,r]));
+const QUOTA = {"肉":2,"魚":2,"ごはん物":1,"麺":1,"卵・豆腐":1};
+const WD = ["日","月","火","水","木","金","土"];
+
+/* ---------- 保存 ---------- */
+const KEY="kondate-v1";
+let S = load();
+function fresh(){ return {v:1,plan:null,prev:[],checks:{},pantry:{},lastBackup:0,firstUse:Date.now()}; }
+function clean(d){
+  const s=fresh();
+  if(!d||typeof d!=="object") return s;
+  if(d.plan&&typeof d.plan==="object"&&/^\d{4}-\d{2}-\d{2}$/.test(d.plan.start)&&Array.isArray(d.plan.days)
+     &&d.plan.days.length===7&&d.plan.days.every(n=>typeof n==="string"&&Object.hasOwn(BY,n))) s.plan={start:d.plan.start,days:d.plan.days.slice()};
+  if(Array.isArray(d.prev)) s.prev=d.prev.filter(n=>typeof n==="string"&&Object.hasOwn(BY,n));
+  if(d.checks&&typeof d.checks==="object") for(const k in d.checks) if(Object.hasOwn(M,k)&&d.checks[k]===true) s.checks[k]=true;
+  if(d.pantry&&typeof d.pantry==="object") for(const k in d.pantry) if(Object.hasOwn(M,k)&&typeof d.pantry[k]==="boolean") s.pantry[k]=d.pantry[k];
+  if(Number.isFinite(d.lastBackup)) s.lastBackup=d.lastBackup;
+  if(Number.isFinite(d.firstUse)&&d.firstUse>0) s.firstUse=d.firstUse;
+  return s;
+}
+function load(){ try{ const t=localStorage.getItem(KEY); return clean(t?JSON.parse(t):null); }catch(e){ return fresh(); } }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+
+/* ---------- 小さな道具 ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function dayOf(start,i){ const p=start.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]+i); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function frac(v){
+  let n=Math.floor(v+0.02), f=v-n; if(f<0.03) return String(n);
+  for(const d of [2,3,4,6,8]){ const k=Math.round(f*d); if(k>0&&k<d&&Math.abs(f-k/d)<0.025) return (n?n+"と":"")+k+"/"+d; }
+  return String(Math.round(v*10)/10);
+}
+function qty(name,q){
+  const u=M[name][0];
+  if(u==="tsp"){
+    if(q<=0) return "少々";
+    if(q<3) return "小さじ"+frac(q);
+    const half=Math.round(q/1.5)*1.5;
+    if(Math.abs(half-q)<0.05) return "大さじ"+frac(q/3);
+    const tb=Math.floor(q/3); return "大さじ"+tb+"＋小さじ"+frac(q-tb*3);
+  }
+  if(u==="g"||u==="ml") return Math.round(q)+u;
+  return frac(q)+u;
+}
+const inPantry=n=>(n in S.pantry)?S.pantry[n]:!!M[n][2];
+
+/* ---------- 献立を決める ---------- */
+function makePlan(){
+  const avoid=new Set(S.plan?S.plan.days:S.prev);
+  const pick=[];
+  for(const k in QUOTA){
+    let pool=shuffle(R.filter(r=>r.k===k&&!avoid.has(r.n)));
+    if(pool.length<QUOTA[k]) pool=pool.concat(shuffle(R.filter(r=>r.k===k&&avoid.has(r.n))));
+    pick.push(...pool.slice(0,QUOTA[k]));
+  }
+  let order=shuffle(pick);
+  for(let t=0;t<60;t++){ if(order.every((r,i)=>i===0||r.k!==order[i-1].k)) break; order=shuffle(pick); }
+  if(S.plan) S.prev=S.plan.days.slice();
+  S.plan={start:ymd(new Date()),days:order.map(r=>r.n)};
+  S.checks={};
+  save();
+}
+function swapDay(i){
+  const used=new Set(S.plan.days), cur=BY[S.plan.days[i]];
+  let pool=R.filter(r=>!used.has(r.n)&&r.k===cur.k);
+  if(!pool.length) pool=R.filter(r=>!used.has(r.n));
+  if(!pool.length) return;
+  S.plan.days[i]=pool[Math.floor(Math.random()*pool.length)].n;
+  const need=shopList().map(x=>x.name);
+  for(const k in S.checks) if(!need.includes(k)) delete S.checks[k];
+  save();
+}
+function shopList(){
+  if(!S.plan) return [];
+  const m=new Map();
+  S.plan.days.forEach(n=>BY[n].ing.forEach(([name,q])=>{
+    if(inPantry(name)) return;
+    if(!m.has(name)) m.set(name,{name,q:0,dishes:[]});
+    const o=m.get(name); o.q+=q; if(!o.dishes.includes(n)) o.dishes.push(n);
+  }));
+  return [...m.values()];
+}
+
+/* ---------- 画面 ---------- */
+let tab="plan";
+const main=$("main");
+function render(){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
+  if(tab==="plan") renderPlan(); else if(tab==="shop") renderShop(); else renderSet();
+}
+function backupNote(){
+  const base=S.lastBackup||S.firstUse;
+  if(!S.plan||Date.now()-base<30*864e5) return "";
+  return '<p class="note">バックアップから30日以上たっています。「設定」から保存しておくと安心です。</p>';
+}
+function renderPlan(){
+  $("ttl").textContent="今週の献立";
+  if(!S.plan){
+    $("sub").textContent="夕食・1人分";
+    main.innerHTML='<p class="empty">ボタンを押すと、今日から7日分の夕食が決まります。<br>買い物リストも一緒にできます。</p><button class="btn" data-act="make">1週間分をおまかせで作る</button>';
+    return;
+  }
+  const today=ymd(new Date()), end=ymd(dayOf(S.plan.start,6));
+  const a=dayOf(S.plan.start,0), b=dayOf(S.plan.start,6);
+  $("sub").textContent=(a.getMonth()+1)+"/"+a.getDate()+" 〜 "+(b.getMonth()+1)+"/"+b.getDate()+"　夕食・1人分";
+  let h=backupNote();
+  if(today>end) h+='<p class="note">この献立の1週間は終わりました。下のボタンで次の1週間を作れます。</p>';
+  S.plan.days.forEach((n,i)=>{
+    const d=dayOf(S.plan.start,i), r=BY[n], isT=ymd(d)===today;
+    h+='<div class="card'+(isT?" today":"")+'" data-act="open" data-i="'+i+'"><div class="day"><b>'+d.getDate()+'</b><small>'+(isT?"今日":WD[d.getDay()]+"曜")+'</small></div>'
+      +'<div class="dish"><b>'+esc(r.n)+'</b><small>'+esc(r.k)+'・約'+r.t+'分</small></div>'
+      +'<button class="swap" data-act="swap" data-i="'+i+'">替える</button></div>';
+  });
+  h+='<button class="btn sub" data-act="make" style="margin-top:8px">1週間分を作り直す</button>';
+  main.innerHTML=h;
+}
+function renderShop(){
+  $("ttl").textContent="買い物リスト";
+  const list=shopList();
+  if(!S.plan){ $("sub").textContent=""; main.innerHTML='<p class="empty">まだ献立がありません。<br>「献立」で1週間分を作ると、ここに買う物が並びます。</p>'; return; }
+  const left=list.filter(x=>!S.checks[x.name]).length;
+  $("sub").textContent=list.length?(left?"残り "+left+" 品（全 "+list.length+" 品）":"全部買いました"):"";
+  if(!list.length){ main.innerHTML='<p class="empty">買う物はありません。<br>材料はすべて「家にある物」になっています。</p>'; return; }
+  let h="";
+  CATS.forEach(c=>{
+    const xs=list.filter(x=>M[x.name][1]===c); if(!xs.length) return;
+    h+="<h2>"+esc(c)+"</h2>";
+    xs.forEach(x=>{
+      const on=!!S.checks[x.name];
+      h+='<div class="item'+(on?" done":"")+'" data-act="check" data-n="'+esc(x.name)+'"><div class="box">✓</div>'
+        +'<div class="nm"><b>'+esc(x.name)+'</b><small>'+esc(x.dishes.join("、"))+'</small></div>'
+        +'<div class="q">'+esc(qty(x.name,x.q))+'</div>'
+        +'<button class="have" data-act="have" data-n="'+esc(x.name)+'">家に<br>ある</button></div>';
+    });
+  });
+  const hid=new Set(); S.plan.days.forEach(n=>BY[n].ing.forEach(a=>{ if(inPantry(a[0])) hid.add(a[0]); }));
+  if(hid.size) h+='<p class="note" style="margin-top:16px">家にある物として '+hid.size+' 品を外しています（'+esc([...hid].slice(0,6).join("、"))+(hid.size>6?" など":"")+'）。変えるときは「設定」から。</p>';
+  main.innerHTML=h;
+}
+function renderSet(){
+  $("ttl").textContent="設定"; $("sub").textContent="";
+  let h='<h2>家にある物（買い物リストに出しません）</h2><div class="panel"><p>押すと切り替わります。色の付いた物がリストから外れます。</p>';
+  CATS.forEach(c=>{
+    h+='<p style="margin:12px 0 6px;font-weight:600">'+esc(c)+'</p><div class="chips">';
+    Object.keys(M).filter(n=>M[n][1]===c).forEach(n=>{ h+='<button class="chip'+(inPantry(n)?" on":"")+'" data-act="pantry" data-n="'+esc(n)+'">'+esc(n)+'</button>'; });
+    h+="</div>";
+  });
+  h+='</div><h2>バックアップ</h2><div class="panel"><p>献立やチェックは、このiPhoneの中だけに保存されます。ホーム画面のアイコンを消すと一緒に消えます。'
+    +(S.lastBackup?"<br>最後の保存："+new Date(S.lastBackup).toLocaleDateString("ja-JP"):"")+'</p>'
+    +'<button class="btn sub" data-act="backup">バックアップを保存</button><button class="btn sub" data-act="restore">バックアップから戻す</button></div>';
+  main.innerHTML=h;
+}
+
+/* ---------- 作り方のシート ---------- */
+function openSheet(i){
+  const r=BY[S.plan.days[i]];
+  $("sheetTtl").textContent=r.n;
+  let h='<h2>材料（1人分・約'+r.t+'分）</h2><table>';
+  r.ing.forEach(([n,q])=>{ h+="<tr><td>"+esc(n)+"</td><td>"+esc(qty(n,q))+"</td></tr>"; });
+  h+="</table><h2>作り方</h2><ol>"+r.s.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol>";
+  $("sheetBody").innerHTML=h; $("sheetBody").scrollTop=0; $("sheetWrap").hidden=false;
+}
+function closeSheet(){ $("sheetWrap").hidden=true; }
+$("sheetClose").onclick=closeSheet;
+$("sheetWrap").onclick=e=>{ if(e.target===$("sheetWrap")) closeSheet(); };
+
+/* ---------- お知らせ（元に戻す付き） ---------- */
+let toastT=0, undoFn=null;
+function toast(msg,undo){
+  $("toastMsg").textContent=msg; undoFn=undo||null; $("toastUndo").hidden=!undo; $("toast").hidden=false;
+  clearTimeout(toastT); toastT=setTimeout(()=>{ $("toast").hidden=true; },5000);
+}
+$("toastUndo").onclick=()=>{ if(undoFn) undoFn(); undoFn=null; $("toast").hidden=true; };
+
+/* ---------- 操作 ---------- */
+main.onclick=e=>{
+  const el=e.target.closest("[data-act]"); if(!el) return;
+  const act=el.dataset.act, n=el.dataset.n, i=Number(el.dataset.i);
+  if(act==="make"){
+    if(S.plan&&Object.keys(S.checks).length&&!confirm("献立を作り直すと、買い物リストのチェックも消えます。作り直しますか？")) return;
+    makePlan(); main.scrollTop=0; render();
+  }else if(act==="swap"){ swapDay(i); render(); }
+  else if(act==="open"){ openSheet(i); }
+  else if(act==="check"){ if(S.checks[n]) delete S.checks[n]; else S.checks[n]=true; save(); render(); }
+  else if(act==="have"){
+    const had=(n in S.pantry), old=S.pantry[n], chk=!!S.checks[n];
+    S.pantry[n]=true; delete S.checks[n]; save(); render();
+    toast("「"+n+"」を家にある物にしました", ()=>{ if(had) S.pantry[n]=old; else delete S.pantry[n]; if(chk) S.checks[n]=true; save(); render(); });
+  }
+  else if(act==="pantry"){ S.pantry[n]=!inPantry(n); if(S.pantry[n]) delete S.checks[n]; save(); el.classList.toggle("on",S.pantry[n]); }
+  else if(act==="backup"){ backup(); }
+  else if(act==="restore"){ $("file").value=""; $("file").click(); }
+};
+document.querySelector(".tabs").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; tab=b.dataset.tab; main.scrollTop=0; render(); };
+
+async function backup(){
+  const name="kondate-backup-"+ymd(new Date())+".json";
+  const text=JSON.stringify(S);
+  const done=()=>{ S.lastBackup=Date.now(); save(); if(tab==="set") render(); };
+  try{
+    const f=new File([text],name,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f]}); done(); return; }
+  }catch(e){ if(e&&e.name==="AbortError") return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type:"application/json"})); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); done();
+}
+$("file").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!d||typeof d!=="object"||d.v!==1) throw 0;
+    if(!confirm("今のデータを、バックアップの内容に置き換えます。よろしいですか？")) return;
+    S=clean(d); save(); tab="plan"; render(); toast("バックアップから戻しました");
+  }catch(err){ alert("このファイルは読み込めませんでした。このアプリで保存したバックアップを選んでください。"); }
+};
+render();
+</script>
+
+<style>html,body{overscroll-behavior:none}</style>
+<script>
+(function () {
+  function canScroll(el) {
+    for (; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+      var s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1) return true;
+      if (/(auto|scroll)/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1) return true;
+    }
+    return false;
+  }
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches.length > 1) return;
+    var t = e.target;
+    if (t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    if (!canScroll(t)) e.preventDefault();
+  }, { passive: false });
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
